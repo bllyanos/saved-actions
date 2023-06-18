@@ -5,9 +5,10 @@ import (
 
 	"github.com/bllyanos/saved-actions/internals/core"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-func SetupIndexRoute(g *gin.Engine) {
+func SetupIndexRoute(g *gin.Engine, db *gorm.DB) {
 	group := g.Group("/")
 	group.GET("/", func(ctx *gin.Context) {
 

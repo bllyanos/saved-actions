@@ -6,22 +6,30 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func main() {
-	cmd := exec.Command("docker", "build", "-t", "job:latest", ".")
+	cmd := exec.Command("docker",
+		"build",
+		"-t",
+		"job:latest",
+		".",
+	)
 	// cmd := exec.Command("echo", "build", "-t job:latest", ".")
 	stderr, _ := cmd.StderrPipe()
 	defer stderr.Close()
-	// output, _ := cmd.StdoutPipe()
+	stdout, _ := cmd.StdoutPipe()
+	defer stdout.Close()
 
 	wait := make(chan bool)
 
 	go func() {
-		reader := bufio.NewReader(stderr)
-		buf := make([]byte, 0, 24)
+		merged := io.MultiReader(stderr, stdout)
+		reader := bufio.NewReader(merged)
 		for {
-			n, err := io.ReadFull(reader, buf[:cap(buf)])
+			buf := make([]byte, 32)
+			n, err := reader.Read(buf)
 			buf = buf[:n]
 
 			if err != nil {
@@ -34,17 +42,12 @@ func main() {
 					break
 				}
 			}
+
+			_ = time.Second * 2
+			// time.Sleep(time.Millisecond * 10)
 			fmt.Print(string(buf))
 		}
 
-		wait <- true
-	}()
-
-	go func() {
-		// scanner := bufio.NewScanner(stderr)
-		// for scanner.Scan() {
-		// fmt.Print(scanner.Text())
-		// }
 		wait <- true
 	}()
 
@@ -53,9 +56,8 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
+	<-wait
 	err = cmd.Wait()
-	<-wait
-	<-wait
 
 	if err != nil {
 		fmt.Println(err.Error())
