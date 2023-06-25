@@ -1,0 +1,14 @@
+version: '3'
+
+volumes:
+  pgdatavol:
+
+services:
+  pgdb:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: admin
+    ports:
+      - 5432:5432
+    volumes:
+      - "pgdatavol:/var/lib/postgresql/data"
