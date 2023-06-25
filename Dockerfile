@@ -1,11 +1,23 @@
+FROM golang:1.20.5 as builder
+
+WORKDIR /src/app
+
+COPY go.mod go.sum ./
+
+RUN go mod download && go mod verify
+
+COPY . .
+
+RUN go build -o /src/dist/app cmd/api/main.go
+
 FROM alpine:3.18.2
 
-WORKDIR /src/job
+RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
-RUN apk add curl git
+WORKDIR /src/app
 
-RUN echo "#!/bin/sh \necho 'hello'" > ./script.sh
+COPY --from=builder /src/dist/app /src/app/app
 
-RUN chmod +x ./script.sh
+RUN chmod +x /src/app/app
 
-ENTRYPOINT [ "./script.sh" ]
+CMD [ "/src/app/app" ]
